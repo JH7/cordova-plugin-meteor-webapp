@@ -226,6 +226,16 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
 
   // MARK: - Public plugin commands
 
+  @objc open func setRootUrl(_ command: CDVInvokedUrlCommand) {
+    NSLOG("Set root url received")
+
+    let rootUrl = command.arguments[0] as? String ?? ""
+    configuration.rootUrl = rootUrl
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK)
+    commandDelegate?.send(result, callbackId: command.callbackId)
+  }
+
   @objc open func startupDidComplete(_ command: CDVInvokedUrlCommand) {
     NSLog("App startup confirmed")
     startupTimer?.stop()

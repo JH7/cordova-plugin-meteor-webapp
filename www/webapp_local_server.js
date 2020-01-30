@@ -43,6 +43,16 @@ module.exports = {
     );
   },
 
+  setRootUrl: function(callback, rootUrl) {
+    cordova.exec(
+      callback,
+      console.error,
+      "WebAppLocalServer",
+      "setRootUrl",
+      [rootUrl],
+    );
+  },
+
   onError: function(callback) {
     cordova.exec(
       function(errorMessage) {

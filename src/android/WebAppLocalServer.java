@@ -185,7 +185,9 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         errorCallbackContext = null;
 
         configuration.setAppId(currentAssetBundle.getAppId());
-        configuration.setRootUrlString(currentAssetBundle.getRootUrlString());
+        if (configuration.getRootUrlString() == null) {
+            configuration.setRootUrlString(currentAssetBundle.getRootUrlString());
+        }
         configuration.setCordovaCompatibilityVersion(currentAssetBundle.getCordovaCompatibilityVersion());
 
         if (switchedToNewVersion) {
@@ -227,6 +229,11 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         }
     }
 
+    private void setRootUrl(CallbackContext callbackContext, String rootUrl) {
+        configuration.setRootUrlString(rootUrl);
+        callbackContext.success();
+    }
+
     //endregion
 
     //region Public plugin commands
@@ -248,6 +255,9 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         } else if ("switchPendingVersion".equals(action)) {
             switchPendingVersion(callbackContext);
             return true;
+        } else if ("setRootUrl".equals(action)) {
+            setRootUrl(callbackContext, args.getString(0));
+            return true;
         }
 
         if (testingDelegate != null) {
@@ -259,7 +269,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
     private void checkForUpdates(final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
-                HttpUrl rootUrl = HttpUrl.parse(currentAssetBundle.getRootUrlString());
+                HttpUrl rootUrl = HttpUrl.parse(configuration.getRootUrlString());
                 if (rootUrl == null) {
                     callbackContext.error("checkForUpdates requires a rootURL to be configured");
                     return;
