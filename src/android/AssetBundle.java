@@ -223,6 +223,7 @@ class AssetBundle {
                 return null;
             }
             String runtimeConfigString = URLDecoder.decode(matcher.group(1), "UTF-8");
+            runtimeConfigString = runtimeConfigString.replaceAll("http://localhost", "http://10.0.2.2");
             return new JSONObject(runtimeConfigString);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Error loading index file", e);
