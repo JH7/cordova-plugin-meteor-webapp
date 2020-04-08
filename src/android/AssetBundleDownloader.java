@@ -162,7 +162,8 @@ class AssetBundleDownloader {
         // If we have a hash for the asset, and the ETag header also specifies
         // a hash, we compare these to verify if we received the expected asset version
         String expectedHash = asset.hash;
-        if (expectedHash != null) {
+        // FIXME: Store the hash from the downloaded manifest
+        if (expectedHash != null && asset.urlPath.indexOf("/manifest.json") < 0) {
             String eTag = response.header("etag");
 
             if (eTag != null) {
