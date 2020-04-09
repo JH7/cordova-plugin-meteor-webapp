@@ -335,7 +335,10 @@ final class AssetBundleDownloader: NSObject, URLSessionDelegate, URLSessionTaskD
       let ETag = response.allHeaderFields["Etag"] as? String,
       let actualHash = SHA1HashFromETag(ETag),
       actualHash != expectedHash {
-        throw WebAppError.downloadFailure(reason: "Hash mismatch for asset: \(asset)", underlyingError: nil)
+        // TODO: Store the hash of the manifest
+        if (asset.urlPath != "/__cordova/manifest.json") {
+            throw WebAppError.downloadFailure(reason: "Hash mismatch for asset: \(asset)", underlyingError: nil)
+        }
     }
   }
 

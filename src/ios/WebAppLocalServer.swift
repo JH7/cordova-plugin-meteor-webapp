@@ -37,7 +37,9 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
     didSet {
       if currentAssetBundle != nil {
         configuration.appId = currentAssetBundle.appId
-        configuration.rootURL = currentAssetBundle.rootURL
+        if (configuration.rootURL == nil) {
+            configuration.rootURL = currentAssetBundle.rootURL
+        }
         configuration.cordovaCompatibilityVersion = currentAssetBundle.cordovaCompatibilityVersion
 
         NSLog("Serving asset bundle version: \(currentAssetBundle.version)")
@@ -225,6 +227,20 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
   }
 
   // MARK: - Public plugin commands
+    
+  @objc open func setRootUrl(_ command: CDVInvokedUrlCommand) {
+    if let rootURL = command.argument(at: 0) as? String {
+        if (rootURL != "") {
+            configuration.rootURL = URL.init(string: rootURL)
+            
+            let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "OK")
+            self.commandDelegate?.send(result, callbackId: command.callbackId)
+        }
+    } else {
+        let result = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "Argument is not a String")
+        self.commandDelegate?.send(result, callbackId: command.callbackId)
+    }
+  }
 
   @objc open func startupDidComplete(_ command: CDVInvokedUrlCommand) {
     NSLog("App startup confirmed")
