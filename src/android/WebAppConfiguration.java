@@ -87,6 +87,8 @@ class WebAppConfiguration {
     }
 
     public void reset() {
+        String rootUrl = getRootUrlString();
         preferences.edit().clear().commit();
+        setRootUrlString(rootUrl);
     }
 }
