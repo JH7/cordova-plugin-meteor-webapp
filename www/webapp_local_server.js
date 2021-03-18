@@ -28,6 +28,21 @@ module.exports = {
       []);
   },
 
+  onStartingNewVersionDownload: function(callback) {
+    cordova.exec(
+      function(yes) {
+        let result = yes;
+        if (typeof yes === 'string') {
+          result = yes === 'true' ? true : false;
+        }
+        callback(result);
+      },
+      console.error,
+      "WebAppLocalServer",
+      "onStartingNewVersionDownload",
+      []);
+  },
+
   switchToPendingVersion: function(callback, errorCallback) {
     cordova.exec(
       callback,

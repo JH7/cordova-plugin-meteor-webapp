@@ -2,6 +2,7 @@ protocol AssetBundleManagerDelegate: class {
   func assetBundleManager(_ assetBundleManager: AssetBundleManager, shouldDownloadBundleForManifest manifest: AssetManifest) -> Bool
   func assetBundleManager(_ assetBundleManager: AssetBundleManager, didFinishDownloadingBundle assetBundle: AssetBundle)
   func assetBundleManager(_ assetBundleManager: AssetBundleManager, didFailDownloadingBundleWithError error: Error)
+  func assetBundleManager(_ assetBundleManager: AssetBundleManager, didStartNewVersionDownload yes: Bool)
 }
 
 final class AssetBundleManager: AssetBundleDownloaderDelegate {
@@ -97,6 +98,7 @@ final class AssetBundleManager: AssetBundleDownloaderDelegate {
     let dataTask = session.dataTask(with: manifestURL, completionHandler: {
       (data, response, error) in
       guard let data = data else {
+        self.delegate?.assetBundleManager(self, didStartNewVersionDownload: false)
         self.didFailWithError(WebAppError.downloadFailure(reason: "Error downloading asset manifest", underlyingError: error))
         return
       }
@@ -104,6 +106,7 @@ final class AssetBundleManager: AssetBundleDownloaderDelegate {
       guard let response = response as? HTTPURLResponse else { return }
 
       if !response.isSuccessful {
+        self.delegate?.assetBundleManager(self, didStartNewVersionDownload: false)
         self.didFailWithError(WebAppError.downloadFailure(reason: "Non-success status code \(response.statusCode) for asset manifest", underlyingError: nil))
         return
       }
@@ -112,6 +115,7 @@ final class AssetBundleManager: AssetBundleDownloaderDelegate {
       do {
         manifest = try AssetManifest(data: data)
       } catch {
+        self.delegate?.assetBundleManager(self, didStartNewVersionDownload: false)
         self.didFailWithError(error)
         return
       }
@@ -123,13 +127,17 @@ final class AssetBundleManager: AssetBundleDownloaderDelegate {
       self.queue.async {
         if self.assetBundleDownloader?.assetBundle.version == version {
           NSLog("Already downloading asset bundle version: \(version)")
+          self.delegate?.assetBundleManager(self, didStartNewVersionDownload: false)
           return
         }
 
         // Give the delegate a chance to decide whether the version should be downloaded
         if !(self.delegate?.assetBundleManager(self, shouldDownloadBundleForManifest: manifest) ?? false) {
+          self.delegate?.assetBundleManager(self, didStartNewVersionDownload: false)
           return
         }
+
+        self.delegate?.assetBundleManager(self, didStartNewVersionDownload: true)
 
         // Cancel in progress download if there is one
         self.assetBundleDownloader?.cancel()

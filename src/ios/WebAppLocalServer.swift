@@ -58,6 +58,8 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
   /// Callback ID used to send an error notification to JavaScript
   var errorCallbackId: String?
 
+  var startingNewVersionDownloadCallbackId: String?
+
   /// Timer used to wait for startup to complete after a reload
   private var startupTimer: METTimer?
 
@@ -194,6 +196,7 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
     // Clear existing callbacks
     newVersionReadyCallbackId = nil
     errorCallbackId = nil
+    startingNewVersionDownloadCallbackId = nil
 
     // If there is a pending asset bundle, we make it the current
     if let pendingAssetBundle = pendingAssetBundle {
@@ -331,6 +334,26 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
     commandDelegate?.send(result, callbackId: errorCallbackId)
   }
 
+  @objc open func onStartingNewVersionDownload(_ command: CDVInvokedUrlCommand) {
+    startingNewVersionDownloadCallbackId = command.callbackId
+
+    let result = CDVPluginResult(status: CDVCommandStatus_NO_RESULT)
+    // This allows us to invoke the callback later
+    result?.setKeepCallbackAs(true)
+    commandDelegate?.send(result, callbackId: startingNewVersionDownloadCallbackId)
+  }
+
+  private func notifyStartingNewVersionDownload(_ yes: Bool) {
+    NSLog("Starting new version download: \(yes)")
+
+    guard let startingNewVersionDownloadCallbackId = startingNewVersionDownloadCallbackId else { return }
+
+    let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: yes)
+    // This allows us to invoke the callback later
+    result?.setKeepCallbackAs(true)
+    commandDelegate?.send(result, callbackId: startingNewVersionDownloadCallbackId)
+  }
+
   // MARK: - Managing Versions
 
   func revertToLastKnownGoodVersion() {
@@ -394,6 +417,10 @@ open class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
 
   func assetBundleManager(_ assetBundleManager: AssetBundleManager, didFailDownloadingBundleWithError error: Error) {
     notifyError(error)
+  }
+
+  func assetBundleManager(_ assetBundleManager: AssetBundleManager, didStartNewVersionDownload yes: Bool) {
+    notifyStartingNewVersionDownload(yes)
   }
 
   // MARK: - Local server

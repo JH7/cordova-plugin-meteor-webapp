@@ -27,6 +27,7 @@ class AssetBundleManager {
         public boolean shouldDownloadBundleForManifest(AssetManifest manifest);
         public void onFinishedDownloadingAssetBundle(AssetBundle assetBundle);
         public void onError(Throwable cause);
+        public void startingNewVersionDownload(boolean yes);
     }
 
     private Callback callback;
@@ -95,6 +96,7 @@ class AssetBundleManager {
             public void onFailure(Call call, IOException e) {
                 if (!call.isCanceled()) {
                     didFail(new WebAppException("Error downloading asset manifest", e));
+                    startingNewVersionDownload(false);
                 }
             }
 
@@ -102,6 +104,7 @@ class AssetBundleManager {
             public void onResponse(Call call, Response response) {
                 if (!response.isSuccessful()) {
                     didFail(new WebAppException("Non-success status code " + response.code() + "for asset manifest"));
+                    startingNewVersionDownload(false);
                     return;
                 }
 
@@ -112,9 +115,11 @@ class AssetBundleManager {
                     manifest = new AssetManifest(new String(manifestBytes));
                 } catch (WebAppException e) {
                     didFail(e);
+                    startingNewVersionDownload(false);
                     return;
                 } catch (IOException e) {
                     didFail(e);
+                    startingNewVersionDownload(false);
                     return;
                 }
 
@@ -124,13 +129,17 @@ class AssetBundleManager {
 
                 if (assetBundleDownloader != null && assetBundleDownloader.getAssetBundle().getVersion().equals(version)) {
                     Log.w(LOG_TAG, "Already downloading asset bundle version: " + version);
+                    startingNewVersionDownload(false);
                     return;
                 }
 
                 // Give the callback a chance to decide whether the version should be downloaded
                 if (callback != null && !callback.shouldDownloadBundleForManifest(manifest)) {
+                    startingNewVersionDownload(false);
                     return;
                 }
+
+                startingNewVersionDownload(true);
 
                 // Cancel in progress download if there is one
                 if (assetBundleDownloader != null) {
@@ -277,6 +286,12 @@ class AssetBundleManager {
 
         if (callback != null) {
             callback.onError(cause);
+        }
+    }
+
+    protected void startingNewVersionDownload(boolean yes) {
+        if (callback != null) {
+            callback.startingNewVersionDownload(yes);
         }
     }
 

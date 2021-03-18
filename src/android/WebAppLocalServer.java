@@ -63,6 +63,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
 
     private CallbackContext newVersionReadyCallbackContext;
     private CallbackContext errorCallbackContext;
+    private CallbackContext startingNewVersionDownloadCallbackContext;
 
     /** Timer used to wait for startup to complete after a reload */
     private Timer startupTimer;
@@ -183,6 +184,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         // Clear existing callbacks
         newVersionReadyCallbackContext = null;
         errorCallbackContext = null;
+        startingNewVersionDownloadCallbackContext = null;
 
         configuration.setAppId(currentAssetBundle.getAppId());
         if (configuration.getRootUrlString() == null) {
@@ -254,6 +256,9 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         } else if ("setRootUrl".equals(action)) {
             setRootUrl(callbackContext, args.getString(0));
             return true;
+        } else if("onStartingNewVersionDownload".equals(action)) {
+            onStartingNewVersionDownload(callbackContext);
+            return true;
         }
 
         if (testingDelegate != null) {
@@ -324,6 +329,24 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, cause.getMessage());
             pluginResult.setKeepCallback(true);
             errorCallbackContext.sendPluginResult(pluginResult);
+        }
+    }
+
+    private void onStartingNewVersionDownload(CallbackContext callbackContext) {
+        Log.d(LOG_TAG, "SNV_REGISTER");
+        PluginResult pluginResult = new PluginResult(PluginResult.Status.NO_RESULT);
+        pluginResult.setKeepCallback(true);
+        callbackContext.sendPluginResult(pluginResult);
+
+        startingNewVersionDownloadCallbackContext = callbackContext;
+    }
+
+    private void notifyStartingNewVersionDownload(boolean yes) {
+        Log.d(LOG_TAG, "SNV_NOTIFY");
+        if (startingNewVersionDownloadCallbackContext != null) {
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, String.valueOf(yes));
+            pluginResult.setKeepCallback(true);
+            startingNewVersionDownloadCallbackContext.sendPluginResult(pluginResult);
         }
     }
 
@@ -424,6 +447,13 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
     public void onError(Throwable cause) {
         Log.w(LOG_TAG, "Download failure", cause);
         notifyError(cause);
+    }
+
+    @Override
+    public void startingNewVersionDownload(boolean yes) {
+        Log.i(LOG_TAG, "Starting new version download: " + String.valueOf(yes));
+
+        notifyStartingNewVersionDownload(yes);
     }
 
     //endregion
